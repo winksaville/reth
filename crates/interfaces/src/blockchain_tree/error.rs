@@ -155,14 +155,15 @@ struct InsertBlockErrorData {
 
 impl std::fmt::Display for InsertBlockErrorData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Failed to insert block (hash={}, number={}, parent_hash={}): {}",
-            self.block.hash(),
-            self.block.number,
-            self.block.parent_hash,
-            self.kind
-        )
+        //write!(
+        //    f,
+        //    "Failed to insert block (hash={}, number={}, parent_hash={}): {}",
+        //    self.block.hash(),
+        //    self.block.number,
+        //    self.block.parent_hash,
+        //    self.kind
+        //)
+        panic!("Wink: Failed to insert block, {self:?}")
     }
 }
 
