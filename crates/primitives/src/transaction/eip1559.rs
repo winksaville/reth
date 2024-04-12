@@ -61,6 +61,61 @@ pub struct TxEip1559 {
     pub input: Bytes,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+#[allow(unused)]
+pub(crate) struct TxEip1559Gl128 {
+    /// Added as EIP-pub(crate) 155: Simple replay attack protection
+    pub(crate) chain_id: ChainId,
+    /// A scalar value equal to the number of transactions sent by the sender; formally Tn.
+    pub(crate) nonce: u64,
+    /// A scalar value equal to the maximum
+    /// amount of gas that should be used in executing
+    /// this transaction. This is paid up-front, before any
+    /// computation is done and may not be increased
+    /// later; formally Tg.
+    pub(crate) gas_limit: u128,
+    /// A scalar value equal to the maximum
+    /// amount of gas that should be used in executing
+    /// this transaction. This is paid up-front, before any
+    /// computation is done and may not be increased
+    /// later; formally Tg.
+    ///
+    /// As ethereum circulation is around 120mil eth as of 2022 that is around
+    /// 120000000000000000000000000 wei we are safe to use u128 as its max number is:
+    /// 340282366920938463463374607431768211455
+    ///
+    /// This is also known as `GasFeeCap`
+    pub(crate) max_fee_per_gas: u128,
+    /// Max Priority fee that transaction is paying
+    ///
+    /// As ethereum circulation is around 120mil eth as of 2022 that is around
+    /// 120000000000000000000000000 wei we are safe to use u128 as its max number is:
+    /// 340282366920938463463374607431768211455
+    ///
+    /// This is also known as `GasTipCap`
+    pub(crate) max_priority_fee_per_gas: u128,
+    /// The 160-bit address of the message call’s recipient or, for a contract creation
+    /// transaction, ∅, used here to denote the only member of B0 ; formally Tt.
+    pub(crate) to: TransactionKind,
+    /// A scalar value equal to the number of Wei to
+    /// be transferred to the message call’s recipient or,
+    /// in the case of contract creation, as an endowment
+    /// to the newly created account; formally Tv.
+    pub(crate) value: U256,
+    /// The accessList specifies a list of addresses and storage keys;
+    /// these addresses and storage keys are added into the `accessed_addresses`
+    /// and `accessed_storage_keys` global sets (introduced in EIP-2929).
+    /// A gas cost is charged, though at a discount relative to the cost of
+    /// accessing outside the list.
+    pub(crate) access_list: AccessList,
+    /// Input has two uses depending if transaction is Create or Call (if `to` field is None or
+    /// Some). pub(crate) init: An unlimited size byte array specifying the
+    /// EVM-code for the account initialisation procedure CREATE,
+    /// data: An unlimited size byte array specifying the
+    /// input data of the message call, formally Td.
+    pub(crate) input: Bytes,
+}
+
 impl TxEip1559 {
     /// Returns the effective gas price for the given `base_fee`.
     pub fn effective_gas_price(&self, base_fee: Option<u64>) -> u128 {
@@ -226,7 +281,7 @@ impl TxEip1559 {
 mod tests {
     use super::TxEip1559;
     use crate::{
-        transaction::{signature::Signature, TransactionKind},
+        transaction::{eip1559::TxEip1559Gl128, signature::Signature, TransactionKind},
         AccessList, Address, Transaction, TransactionSigned, B256, U256,
     };
     use std::str::FromStr;
@@ -262,5 +317,32 @@ mod tests {
         let signed_tx = TransactionSigned::from_transaction_and_signature(tx, sig);
         assert_eq!(signed_tx.hash(), hash, "Expected same hash");
         assert_eq!(signed_tx.recover_signer(), Some(signer), "Recovering signer should pass.");
+
+        let tx0 = TxEip1559 {
+            chain_id: 1,
+            nonce: 0x42,
+            gas_limit: 44386,
+            to: TransactionKind::Call( hex!("6069a6c32cf691f5982febae4faf8a6f3ab2f0f6").into()),
+            value: U256::ZERO,
+            input:  hex!("a22cb4650000000000000000000000005eee75727d804a2b13038928d36f8b188945a57a0000000000000000000000000000000000000000000000000000000000000000").into(),
+            max_fee_per_gas: 0x4a817c800,
+            max_priority_fee_per_gas: 0x3b9aca00,
+            access_list: AccessList::default(),
+        };
+
+        let tx1 = TxEip1559Gl128 {
+            chain_id: 1,
+            nonce: 0x42,
+            gas_limit: 44386u128,
+            to: TransactionKind::Call( hex!("6069a6c32cf691f5982febae4faf8a6f3ab2f0f6").into()),
+            value: U256::ZERO,
+            input:  hex!("a22cb4650000000000000000000000005eee75727d804a2b13038928d36f8b188945a57a0000000000000000000000000000000000000000000000000000000000000000").into(),
+            max_fee_per_gas: 0x4a817c800,
+            max_priority_fee_per_gas: 0x3b9aca00,
+            access_list: AccessList::default(),
+        };
+
+        println!("TxEip1559:      size_of={}", std::mem::size_of_val(&tx0));
+        println!("TxEip1559Gl128: size_of={}", std::mem::size_of_val(&tx1));
     }
 }
