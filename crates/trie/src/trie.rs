@@ -329,6 +329,7 @@ where
         #[cfg(feature = "metrics")]
         self.metrics.state_trie.record(stats);
 
+        debug!("wink: trie::state_root::calculate: {root:?}");
         trace!(
             target: "trie::state_root",
             %root,
@@ -337,7 +338,6 @@ where
             leaves_added = stats.leaves_added(),
             "calculated state root"
         );
-
         Ok(StateRootProgress::Complete(root, hashed_entries_walked, trie_updates))
     }
 }
