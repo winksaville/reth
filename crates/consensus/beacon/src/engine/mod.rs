@@ -1092,10 +1092,16 @@ where
         let res = if self.sync.is_pipeline_idle() {
             // we can only insert new payloads if the pipeline is _not_ running, because it holds
             // exclusive access to the database
-            debug!("wink: BeaconConsensusEngine::on_new_payload: try_insert_new_payload {block:?}");
+            debug!(
+                "wink: BeaconConsensusEngine::on_new_payload: try_insert_new_payload {:?}",
+                block.header
+            );
             self.try_insert_new_payload(block)
         } else {
-            debug!("wink: BeaconConsensusEngine::on_new_payload: try_buffering_payload {block:?}");
+            debug!(
+                "wink: BeaconConsensusEngine::on_new_payload: try_buffering_payload {:?}",
+                block.header
+            );
             self.try_buffer_payload(block)
         };
 
